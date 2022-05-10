@@ -1,3 +1,8 @@
+use crate::sys_handles::video::Video;
+use sdl2::pixels;
+
+use crate::Result;
+
 pub struct DrawInfo<'a> {
     pub coords: (u8, u8),
     pub row_count: u8,
@@ -5,128 +10,141 @@ pub struct DrawInfo<'a> {
 }
 
 pub struct Display {
-    pub canvas: [[u8; 64]; 32],
+    /// 4 x 64 x 32 byte array
+    ///
+    /// 4 bytes represent a single rgb pixel [r, g, b, 0]
+    pub virtual_canvas: [[[u8; 4]; 64]; 32],
+    /// sdl::video handle
+    pub video: Video,
 }
 
 impl Display {
-    pub fn new() -> Self {
+    /// Inits the sdl window, canvas and virtual byte canvas
+    pub fn new(sdl_context: &sdl2::Sdl) -> Self {
         Display {
-            canvas: [[0; 64]; 32],
+            virtual_canvas: [[[0; 4]; 64]; 32],
+            video: Video::new(sdl_context),
         }
     }
 
+    /// Clears the canvas and the virtual byte canvas
     pub fn clear(&mut self) {
-        self.canvas = [[0; 64]; 32];
+        self.video.set_draw_color(pixels::Color::RGB(0, 0, 0));
+        self.video.clear();
+        self.virtual_canvas = [[[0; 4]; 64]; 32];
     }
 
-    pub fn draw(
+    /// Returns virtual_canvas as a flat byte Vec
+    pub fn get_raw_bytes(&mut self) -> Vec<u8> {
+        self.virtual_canvas
+            .iter()
+            .flat_map(|row| row.iter().flat_map(|row| row))
+            .copied()
+            .collect::<Vec<u8>>()
+    }
+
+    /// Updates virtual_canvas and renders to window canvas
+    pub fn draw<F: FnMut() -> ()>(
         &mut self,
         DrawInfo {
             coords,
             row_count,
             sprites,
         }: DrawInfo,
-    ) -> Option<()> {
+        mut flipped_bits_callback: F,
+    ) -> Result<()> {
         let (x_coord, y_coord) = (coords.0 & 63, coords.1 & 31);
 
-        let mut sprite_idx = 0 as usize;
-        let mut bit_shift = 7;
-        let mut flipped = None;
+        let final_row = if y_coord + row_count >= 32 {
+            32
+        } else {
+            y_coord + row_count
+        };
 
-        for i in y_coord..(y_coord + row_count) {
-            let mut row = self.canvas[i as usize];
+        let final_column = if x_coord + 8 >= 64 { 64 } else { x_coord + 8 };
 
-            for j in x_coord..(x_coord + 8) {
-                let pixel = row[j as usize];
-                let sprite_pixel = sprites[sprite_idx];
+        let rows = (y_coord..final_row).into_iter().enumerate();
 
+        for (sprite_idx, row_idx) in rows {
+            let mut row = self.virtual_canvas[row_idx as usize];
+            let sprite_pixel = sprites[sprite_idx];
+
+            for column_idx in (x_coord..final_column) {
+                let pixel = row[column_idx as usize];
                 // check bit
-                let is_on = sprite_pixel >> bit_shift & 1 == 1;
+                let is_on = (sprite_pixel >> final_column - column_idx - 1) & 1 == 1;
 
-                if is_on && pixel == 0 {
-                    row[j as usize] = 1;
-                } else if pixel == 1 {
-                    row[j as usize] = 0;
-                    flipped = Some(());
+                if is_on {
+                    row[column_idx as usize] = [5, 110, 5, 0];
+                } else if u32::from_be_bytes(pixel) == u32::from_be_bytes([5, 110, 5, 0]) {
+                    row[column_idx as usize] = [0, 0, 0, 0];
+                    flipped_bits_callback();
                 }
-
-                bit_shift -= 1;
             }
 
-            self.canvas[i as usize] = row;
-            bit_shift = 7;
-            sprite_idx += 1;
+            self.virtual_canvas[row_idx as usize] = row;
         }
 
-        let word = self
-            .canvas
-            .iter()
-            .map(|row| {
-                row.iter()
-                    .map(|val| if *val == 1 { return "X" } else { return "." })
-                    .collect::<Vec<&str>>()
-                    .join("")
-            })
-            .inspect(|row| println!("{}", row))
-            .collect::<Vec<String>>();
+        let bytes = self.get_raw_bytes();
+        self.video.render_texture(&bytes)?;
 
-        flipped
+        Ok(())
     }
 }
 
-mod tests {
-    use super::*;
+// mod tests {
+//     use super::*;
 
-    #[test]
-    fn draws_to_the_canvas() {
-        let mut display = Display::new();
-        let draw_info = DrawInfo {
-            coords: (10, 20),
-            row_count: 5,
-            sprites: &[0xF0, 0x90, 0xF0, 0x90, 0x90], // letter "A",
-        };
+//     #[test]
+//     fn draws_to_the_canvas() {
+//         let mut display = Display::new();
+//         let draw_info = DrawInfo {
+//             coords: (10, 20),
+//             row_count: 5,
+//             sprites: &[0xF0, 0x90, 0xF0, 0x90, 0x90], // letter "A",
+//         };
 
-        display.draw(draw_info);
+//         display.draw(draw_info);
 
-        // slice out the letter "A"
-        // ****
-        // *  *
-        // ****
-        // *  *
-        // *  *
-        let letter_a: [[u8; 4]; 5] = display.canvas[20..25]
-            .iter()
-            .map(|row| {
-                let pixels = &row[10..15];
-                [pixels[0], pixels[1], pixels[2], pixels[3]]
-            })
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap();
+//         // slice out the letter "A"
+//         // ****
+//         // *  *
+//         // ****
+//         // *  *
+//         // *  *
+//         let letter_a: [[u8; 4]; 5] = display.video[20..25]
+//             .iter()
+//             .map(|row| {
+//                 let pixels = &row[10..15];
+//                 [pixels[0], pixels[1], pixels[2], pixels[3]]
+//             })
+//             .collect::<Vec<_>>()
+//             .try_into()
+//             .unwrap();
 
-        let expected = [
-            [1u8, 1u8, 1u8, 1u8],
-            [1u8, 0u8, 0u8, 1u8],
-            [1u8, 1u8, 1u8, 1u8],
-            [1u8, 0u8, 0u8, 1u8],
-            [1u8, 0u8, 0u8, 1u8],
-        ];
+//         let expected = [
+//             [1u8, 1u8, 1u8, 1u8],
+//             [1u8, 0u8, 0u8, 1u8],
+//             [1u8, 1u8, 1u8, 1u8],
+//             [1u8, 0u8, 0u8, 1u8],
+//             [1u8, 0u8, 0u8, 1u8],
+//         ];
 
-        assert_eq!(letter_a, expected);
-    }
+//         assert_eq!(letter_a, expected);
+//     }
 
-    #[test]
-    fn clears_the_canvas() {
-        let mut display = Display::new();
-        let draw_info = DrawInfo {
-            coords: (10, 20),
-            row_count: 5,
-            sprites: &[0xF0, 0x90, 0xF0, 0x90, 0x90],
-        };
+//     #[test]
+//     fn clears_the_canvas() {
+//         let mut display = Display::new();
+//         let draw_info = DrawInfo {
+//             coords: (10, 20),
+//             row_count: 5,
+//             sprites: &[0xF0, 0x90, 0xF0, 0x90, 0x90],
+//         };
 
-        display.draw(draw_info);
-        display.clear();
+//         display.draw(draw_info);
+//         display.clear();
 
-        assert!(display.canvas[20][10] == 0)
-    }
-}
+//         assert!(display.video[20][10] == 0)
+//     }
+// }

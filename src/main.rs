@@ -1,8 +1,10 @@
 mod display;
 mod instruction;
 mod ram;
+mod sys_handles;
 
 use std::{error, fs, path, result, thread, time::Duration};
+use sys_handles::{keyboard::Keyboard, video};
 
 use crate::display::DrawInfo;
 use crate::instruction::Instruction;
@@ -14,9 +16,7 @@ pub type Result<T> = result::Result<T, Error>;
 extern crate rand;
 extern crate sdl2;
 
-use sdl2::{event, keyboard};
-
-// TODO - create Instruction Enum
+use sdl2::{event, keyboard, pixels};
 fn main() -> Result<()> {
     let program =
         fs::read(path::PathBuf::from("../../Downloads/test_opcode.ch8")).expect("couldnt find");
@@ -27,14 +27,20 @@ fn main() -> Result<()> {
     let sdl_context = sdl2::init().unwrap();
     let mut event_pump = sdl_context.event_pump().unwrap();
 
-    let mut canvas = display::Display::new();
+    let mut display = display::Display::new(&sdl_context);
+    let kb = Keyboard::new();
     let mut loaded_ram = Ram::new(program.as_slice());
 
+    display.video.set_draw_color(pixels::Color::RGB(5, 110, 5));
+
     'running: loop {
+        event_pump.pump_events();
         for event in event_pump.poll_iter() {
             match event {
                 event::Event::Quit { .. } => {}
-                _ => {}
+                _ => {
+                    println!("in some event");
+                }
             }
         }
         'inner: loop {
@@ -49,7 +55,7 @@ fn main() -> Result<()> {
 
             let instruction_bytes = loaded_ram.get_next_instruction();
 
-            thread::sleep(Duration::from_millis(16));
+            // thread::sleep(Duration::from_millis(1000 / 60));
 
             let parsed_instruction = Instruction::from(instruction_bytes);
 
@@ -69,7 +75,7 @@ fn main() -> Result<()> {
             // );
             match (first_nibble, x, y, n) {
                 (0x0, 0x0, 0xE, 0x0) => {
-                    canvas.clear();
+                    display.clear();
                 }
                 (0x0, 0x0, 0xE, 0xE) => {
                     loaded_ram.remove_addr().and_then(|return_addr| {
@@ -162,18 +168,25 @@ fn main() -> Result<()> {
                 (0xD, _, _, _) => {
                     let sprite_start_idx = loaded_ram.I as usize;
                     let sprite_end_idx = sprite_start_idx + n as usize;
-                    let sprites = &loaded_ram.mem[sprite_start_idx..sprite_end_idx];
 
-                    let draw_info = DrawInfo {
-                        coords: (loaded_ram.V[x as usize], loaded_ram.V[y as usize]),
-                        row_count: n,
-                        sprites,
+                    let sprites = &loaded_ram.mem[sprite_start_idx..sprite_end_idx]
+                        .iter()
+                        .copied()
+                        .collect::<Vec<u8>>();
+
+                    let coords = (loaded_ram.V[x as usize], loaded_ram.V[y as usize]);
+
+                    let flipped_bit_callback = || {
+                        loaded_ram.update_vf_register(true);
                     };
 
-                    if let Some(_) = canvas.draw(draw_info) {
-                        // bits were flipped from 1 to 0 during the draw call
-                        loaded_ram.update_vf_register(true);
-                    }
+                    let draw_info = DrawInfo {
+                        coords,
+                        sprites: sprites.as_slice(),
+                        row_count: n,
+                    };
+
+                    display.draw(draw_info, flipped_bit_callback).unwrap();
                 }
                 (0xE, _, _, _) => match n {
                     0xE => {
@@ -231,25 +244,18 @@ fn main() -> Result<()> {
                         let char = loaded_ram.V[x as usize];
                         loaded_ram.I = (80 + (char * 5)) as u16;
                     }
-                    0xA => loop {
-                        let pressed_keys = event_pump
-                            .keyboard_state()
-                            .pressed_scancodes()
-                            .take(1)
-                            .collect::<Vec<_>>();
-
-                        if !pressed_keys.is_empty() {
-                            if let Some(value) = pressed_keys
-                                .get(1)
-                                .and_then(|&scan_code| keyboard::Keycode::from_scancode(scan_code))
-                                .and_then(|key_code| Some(key_code as u8))
-                            {
-                                loaded_ram.V[x as usize] = value;
-                            }
-
-                            break;
+                    0xA => {
+                        if let event::Event::KeyDown {
+                            scancode: Some(code),
+                            ..
+                        } = event_pump.wait_event()
+                        {
+                            kb.scancode_to_hex.get(&code).and_then(|val| {
+                                loaded_ram.V[x as usize] = *val;
+                                Some(())
+                            });
                         }
-                    },
+                    }
                     0xE => {
                         let (update, did_overflow) = loaded_ram
                             .I
