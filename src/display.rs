@@ -71,8 +71,9 @@ impl Display {
 
             for column_idx in (x_coord..final_column) {
                 let pixel = row[column_idx as usize];
+                let bit_shift = final_column - column_idx - 1;
                 // check bit
-                let is_on = (sprite_pixel >> final_column - column_idx - 1) & 1 == 1;
+                let is_on = (sprite_pixel >> bit_shift) & 1 == 1;
 
                 if is_on {
                     row[column_idx as usize] = [5, 110, 5, 0];

@@ -77,11 +77,7 @@ impl Ram {
 
     /// sets VF register
     pub fn update_vf_register(&mut self, should_update: bool) {
-        if should_update {
-            self.V[0xF] = 1;
-        } else {
-            self.V[0xF] = 0;
-        }
+        self.V[0xF] = if should_update { 1 } else { 0 }
     }
 
     /// sets Index register
