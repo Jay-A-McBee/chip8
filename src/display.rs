@@ -1,5 +1,5 @@
-use crate::sys_handles::video::Video;
-use sdl2::pixels;
+use crate::render::{Render, Renderer};
+use sdl2::Sdl;
 
 use crate::Result;
 
@@ -14,24 +14,25 @@ pub struct Display {
     ///
     /// 4 bytes represent a single rgb pixel [r, g, b, 0]
     pub virtual_canvas: [[[u8; 4]; 64]; 32],
-    /// sdl::video handle
-    pub video: Video,
+    /// Wrapper around a Canvas that implements Render trait
+    pub renderer: Renderer,
+}
+
+impl From<&Sdl> for Display {
+    fn from(sdl_ctx: &Sdl) -> Self {
+        let renderer = Renderer::from(sdl_ctx);
+        Display {
+            renderer,
+            virtual_canvas: [[[0; 4]; 64]; 32],
+        }
+    }
 }
 
 impl Display {
-    /// Inits the sdl window, canvas and virtual byte canvas
-    pub fn new(sdl_context: &sdl2::Sdl) -> Self {
-        Display {
-            virtual_canvas: [[[0; 4]; 64]; 32],
-            video: Video::new(sdl_context),
-        }
-    }
-
     /// Clears the canvas and the virtual byte canvas
-    pub fn clear(&mut self) {
-        self.video.set_draw_color(pixels::Color::RGB(0, 0, 0));
-        self.video.clear();
+    pub fn clear(&mut self) -> Result<()> {
         self.virtual_canvas = [[[0; 4]; 64]; 32];
+        self.renderer.clear()
     }
 
     /// Returns virtual_canvas as a flat byte Vec
@@ -69,17 +70,19 @@ impl Display {
             let mut row = self.virtual_canvas[row_idx as usize];
             let sprite_pixel = sprites[sprite_idx];
 
-            for column_idx in (x_coord..final_column) {
+            for (idx, column_idx) in (x_coord..final_column).into_iter().enumerate() {
                 let pixel = row[column_idx as usize];
-                let bit_shift = final_column - column_idx - 1;
+                let bit_shift = 7 - idx;
                 // check bit
                 let is_on = (sprite_pixel >> bit_shift) & 1 == 1;
 
                 if is_on {
                     row[column_idx as usize] = [5, 110, 5, 0];
-                } else if u32::from_be_bytes(pixel) == u32::from_be_bytes([5, 110, 5, 0]) {
+                } else {
                     row[column_idx as usize] = [0, 0, 0, 0];
-                    flipped_bits_callback();
+                    if u32::from_be_bytes(pixel) == u32::from_be_bytes([5, 110, 5, 0]) {
+                        flipped_bits_callback();
+                    }
                 }
             }
 
@@ -87,65 +90,96 @@ impl Display {
         }
 
         let bytes = self.get_raw_bytes();
-        self.video.render_texture(&bytes)?;
+        self.renderer.render(&bytes)?;
 
         Ok(())
     }
 }
 
-// mod tests {
-//     use super::*;
+mod tests {
+    use super::*;
 
-//     #[test]
-//     fn draws_to_the_canvas() {
-//         let mut display = Display::new();
-//         let draw_info = DrawInfo {
-//             coords: (10, 20),
-//             row_count: 5,
-//             sprites: &[0xF0, 0x90, 0xF0, 0x90, 0x90], // letter "A",
-//         };
+    pub struct MockCanvas {}
 
-//         display.draw(draw_info);
+    impl Render for MockCanvas {
+        fn render(&mut self, bytes: &[u8]) -> Result<()> {
+            Ok(())
+        }
 
-//         // slice out the letter "A"
-//         // ****
-//         // *  *
-//         // ****
-//         // *  *
-//         // *  *
-//         let letter_a: [[u8; 4]; 5] = display.video[20..25]
-//             .iter()
-//             .map(|row| {
-//                 let pixels = &row[10..15];
-//                 [pixels[0], pixels[1], pixels[2], pixels[3]]
-//             })
-//             .collect::<Vec<_>>()
-//             .try_into()
-//             .unwrap();
+        fn clear(&mut self) -> Result<()> {
+            Ok(())
+        }
+    }
 
-//         let expected = [
-//             [1u8, 1u8, 1u8, 1u8],
-//             [1u8, 0u8, 0u8, 1u8],
-//             [1u8, 1u8, 1u8, 1u8],
-//             [1u8, 0u8, 0u8, 1u8],
-//             [1u8, 0u8, 0u8, 1u8],
-//         ];
+    fn setup() -> Display {
+        let renderer = Renderer {
+            canvas: Box::new(MockCanvas {}),
+        };
 
-//         assert_eq!(letter_a, expected);
-//     }
+        Display {
+            renderer,
+            virtual_canvas: [[[0; 4]; 64]; 32],
+        }
+    }
 
-//     #[test]
-//     fn clears_the_canvas() {
-//         let mut display = Display::new();
-//         let draw_info = DrawInfo {
-//             coords: (10, 20),
-//             row_count: 5,
-//             sprites: &[0xF0, 0x90, 0xF0, 0x90, 0x90],
-//         };
+    #[test]
+    fn draws_to_virtual_canvas() {
+        let mut display = setup();
+        let draw_info = DrawInfo {
+            coords: (10, 20),
+            row_count: 5,
+            sprites: &[0xF0, 0x90, 0xF0, 0x90, 0x90], // letter "A",
+        };
+        let mock_cb = || {};
 
-//         display.draw(draw_info);
-//         display.clear();
+        let _ = display.draw(draw_info, mock_cb);
 
-//         assert!(display.video[20][10] == 0)
-//     }
-// }
+        assert!(display.virtual_canvas[20][10] == [5, 110, 5, 0])
+    }
+
+    #[test]
+    fn clears_virtual_canvas() {
+        let mut display = setup();
+        let mock_cb = || {};
+        let draw_info = DrawInfo {
+            coords: (10, 20),
+            row_count: 5,
+            sprites: &[0xF0, 0x90, 0xF0, 0x90, 0x90],
+        };
+
+        let _ret1 = display.draw(draw_info, mock_cb);
+        let _ret2 = display.clear();
+
+        assert!(display.virtual_canvas[20][10] == [0, 0, 0, 0])
+    }
+
+    #[test]
+    fn handles_x_coord_oob() {
+        let mut display = setup();
+        let mock_cb = || {};
+        let draw_info = DrawInfo {
+            coords: (60, 20),
+            row_count: 5,
+            sprites: &[0xF0, 0x90, 0xF0, 0x90, 0x90],
+        };
+
+        let _ret1 = display.draw(draw_info, mock_cb);
+
+        assert!(true == true);
+    }
+
+    #[test]
+    fn handles_y_coord_oob() {
+        let mut display = setup();
+        let mock_cb = || {};
+        let draw_info = DrawInfo {
+            coords: (60, 30),
+            row_count: 5,
+            sprites: &[0xF0, 0x90, 0xF0, 0x90, 0x90],
+        };
+
+        let _ret1 = display.draw(draw_info, mock_cb);
+
+        assert!(true == true);
+    }
+}

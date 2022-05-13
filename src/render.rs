@@ -1,17 +1,22 @@
-use sdl2::{pixels, render, video, Sdl};
+use sdl2::{pixels, render::WindowCanvas, Sdl};
 
 use crate::Result;
 
-pub struct Video {
-    canvas: render::Canvas<video::Window>,
+pub trait Render {
+    fn render(&mut self, bytes: &[u8]) -> Result<()>;
+    fn clear(&mut self) -> Result<()>;
 }
 
-impl Video {
-    /// returns a new Video instance
-    pub fn new(sdl_context: &Sdl) -> Self {
-        let video_subsystem = sdl_context.video().unwrap();
+struct Canvas<T> {
+    canvas: T,
+}
+
+impl From<&Sdl> for Canvas<WindowCanvas> {
+    fn from(sdl_ctx: &Sdl) -> Self {
+        let video_subsystem = sdl_ctx.video().unwrap();
         let window = video_subsystem
             .window("Chip8", 64 * 20, 32 * 20)
+            .position_centered()
             .build()
             .unwrap();
 
@@ -22,11 +27,13 @@ impl Video {
             .build()
             .unwrap();
 
-        Video { canvas }
+        Canvas { canvas }
     }
+}
 
+impl Render for Canvas<WindowCanvas> {
     /// creates a texture from byte array and renders onto canvas
-    pub fn render_texture(&mut self, bytes: &[u8]) -> Result<()> {
+    fn render(&mut self, bytes: &[u8]) -> Result<()> {
         let creator = self.canvas.texture_creator();
         // create a texture that matches our virtual display dimensions
         let mut texture =
@@ -40,14 +47,31 @@ impl Video {
         Ok(())
     }
 
-    /// sets draw color for canvas
-    pub fn set_draw_color(&mut self, color: pixels::Color) {
-        self.canvas.set_draw_color(color);
-    }
-
-    /// sets draw color to black and clears the canvas
-    pub fn clear(&mut self) {
+    fn clear(&mut self) -> Result<()> {
         self.canvas.set_draw_color(pixels::Color::RGB(0, 0, 0));
         self.canvas.clear();
+        Ok(())
+    }
+}
+
+pub struct Renderer {
+    pub canvas: Box<dyn Render>,
+}
+
+impl Renderer {
+    pub fn clear(&mut self) -> Result<()> {
+        self.canvas.clear()
+    }
+
+    pub fn render(&mut self, bytes: &[u8]) -> Result<()> {
+        self.canvas.render(bytes)
+    }
+}
+
+impl From<&Sdl> for Renderer {
+    fn from(sdl_ctx: &Sdl) -> Self {
+        Renderer {
+            canvas: Box::new(Canvas::from(sdl_ctx)),
+        }
     }
 }
