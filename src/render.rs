@@ -48,7 +48,7 @@ impl Render for Canvas<WindowCanvas> {
     }
 
     fn clear(&mut self) -> Result<()> {
-        self.canvas.set_draw_color(pixels::Color::RGB(0, 0, 0));
+        self.canvas.set_draw_color(pixels::Color::RGB(255, 0, 20));
         self.canvas.clear();
         Ok(())
     }

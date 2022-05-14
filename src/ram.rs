@@ -40,7 +40,7 @@ impl Ram {
     pub const START_PRGM_REGISTER: usize = 0x200;
 
     /// creates Ram struct
-    pub fn new(program: &[u8]) -> Self {
+    pub fn load(program: &[u8]) -> Self {
         let program_len = program.len();
 
         let loaded = Self::MEMORY[0..80]
@@ -77,12 +77,11 @@ impl Ram {
 
     /// sets VF register
     pub fn update_vf_register(&mut self, should_update: bool) {
-        self.V[0xF] = if should_update { 1 } else { 0 }
+        self.V[0xF] = if should_update { 1 } else { 0 };
     }
 
     /// sets Index register
     pub fn set_i_register(&mut self, value: u16) {
-        println!("in set I : {}", value);
         self.I = value;
     }
 
@@ -125,35 +124,35 @@ mod tests {
 
     #[test]
     fn loads_font() {
-        let mut ram = Ram::new(&PROGRAM);
+        let mut ram = Ram::load(&PROGRAM);
         let end = 80 + Ram::FONT.len();
         assert_eq!(&ram.mem[80..end], Ram::FONT);
     }
 
     #[test]
     fn loads_program() {
-        let mut ram = Ram::new(&PROGRAM);
+        let mut ram = Ram::load(&PROGRAM);
         let end = ram.PC + PROGRAM.len();
         assert_eq!(&ram.mem[ram.PC..end], PROGRAM);
     }
 
     #[test]
     fn sets_registers() {
-        let mut ram = Ram::new(&PROGRAM);
+        let mut ram = Ram::load(&PROGRAM);
         ram.set_register(1, 10u8);
         assert_eq!(ram.V[1], 10u8)
     }
 
     #[test]
     fn adds_address() {
-        let mut ram = Ram::new(&PROGRAM);
+        let mut ram = Ram::load(&PROGRAM);
         ram.store_addr(0x0F);
         assert_eq!(ram.stack, vec![0x0F]);
     }
 
     #[test]
     fn removes_address() {
-        let mut ram = Ram::new(&PROGRAM);
+        let mut ram = Ram::load(&PROGRAM);
         ram.store_addr(0x0F);
         let removed = ram.remove_addr().unwrap();
         assert!(removed == 0x0F);
@@ -161,7 +160,7 @@ mod tests {
 
     #[test]
     fn updates_vf_register() {
-        let mut ram = Ram::new(&PROGRAM);
+        let mut ram = Ram::load(&PROGRAM);
         ram.update_vf_register(true);
         assert!(ram.V[15] == 1);
         ram.update_vf_register(false);
@@ -170,28 +169,28 @@ mod tests {
 
     #[test]
     fn sets_delay_timer_register() {
-        let mut ram = Ram::new(&PROGRAM);
+        let mut ram = Ram::load(&PROGRAM);
         ram.set_timer_register(Timer::Delay, 255);
         assert_eq!(ram.delay_timer, 255);
     }
 
     #[test]
     fn gets_delay_timer_register() {
-        let mut ram = Ram::new(&PROGRAM);
+        let mut ram = Ram::load(&PROGRAM);
         ram.set_timer_register(Timer::Delay, 255);
         assert_eq!(255, ram.get_timer_register(Timer::Delay));
     }
 
     #[test]
     fn sets_sound_timer_register() {
-        let mut ram = Ram::new(&PROGRAM);
+        let mut ram = Ram::load(&PROGRAM);
         ram.set_timer_register(Timer::Sound, 255);
         assert_eq!(ram.sound_timer, 255);
     }
 
     #[test]
     fn gets_sound_timer_register() {
-        let mut ram = Ram::new(&PROGRAM);
+        let mut ram = Ram::load(&PROGRAM);
         ram.set_timer_register(Timer::Sound, 255);
         assert_eq!(255, ram.get_timer_register(Timer::Sound));
     }

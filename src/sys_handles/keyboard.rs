@@ -5,6 +5,7 @@ pub struct Keyboard {
     pub hex_to_scancode: HashMap<u8, Scancode>,
     pub scancode_to_hex: HashMap<Scancode, u8>,
     pub pressed_keys: HashMap<u8, bool>,
+    last_pressed: Option<u8>,
 }
 
 const HEX_TO_SCANCODE: [(u8, Scancode); 16] = [
@@ -46,17 +47,25 @@ impl Keyboard {
             hex_to_scancode: HashMap::from(HEX_TO_SCANCODE),
             scancode_to_hex: HashMap::from(scancode_to_hex),
             pressed_keys: HashMap::from(pressed_keys),
+            last_pressed: None,
         }
     }
 
     pub fn press_key(&mut self, scancode: Scancode) {
-        self.scancode_to_hex.get(&scancode).and_then(|code| {
-            self.pressed_keys.insert(*code, true);
+        if let Some(code) = self.last_pressed {
+            self.pressed_keys.insert(code, false);
+        }
+
+        self.scancode_to_hex.get(&scancode).and_then(|&code| {
+            println!("PRESSED:{code}");
+            self.pressed_keys.insert(code, true);
+            self.last_pressed = Some(code);
             Some(())
         });
     }
 
     pub fn release_key(&mut self, scancode: Scancode) {
+        println!("IN RELEASE:{scancode}");
         self.scancode_to_hex.get(&scancode).and_then(|code| {
             self.pressed_keys.insert(*code, false);
             Some(())
@@ -64,6 +73,10 @@ impl Keyboard {
     }
 
     pub fn is_pressed(&self, keycode: u8) -> bool {
+        println!(
+            "IN IS_PRESSED:{keycode}::{}",
+            *self.pressed_keys.get(&keycode).unwrap()
+        );
         *self.pressed_keys.get(&keycode).unwrap()
     }
 }

@@ -37,18 +37,14 @@ impl<'a> Emulator<'a> {
             for ev in self.event_pump.poll_iter() {
                 match ev {
                     event::Event::Quit { .. } => {
-                        break 'running;
+                        // break 'running;
                     }
                     event::Event::KeyDown {
                         scancode: Some(code),
                         ..
                     } => self.keyboard.press_key(code),
-                    event::Event::KeyUp {
-                        scancode: Some(code),
-                        ..
-                    } => self.keyboard.release_key(code),
                     _ => {
-                        println!("{ev:?}");
+                        println!("EVENT::{ev:?}");
                     }
                 }
             }
@@ -65,15 +61,9 @@ impl<'a> Emulator<'a> {
         (hundreds_digit, tens_digit, ones_digit)
     }
 
-    fn is_pressed(&self, key_code: i32) -> bool {
-        if let Some(scan_code) = keyboard::Scancode::from_i32(key_code) {
-            return self
-                .event_pump
-                .keyboard_state()
-                .is_scancode_pressed(scan_code);
-        }
-
-        false
+    fn is_pressed(&self, key_code: u8) -> bool {
+        println!("IS PRESSED::{}", key_code);
+        self.keyboard.is_pressed(key_code)
     }
 
     pub fn cycle(&mut self) {
@@ -206,7 +196,7 @@ impl<'a> Emulator<'a> {
             }
             (0xD, _, _, _) => {
                 let sprite_start_idx = self.loaded_ram.I as usize;
-                let sprite_end_idx = sprite_start_idx + n as usize;
+                let sprite_end_idx = sprite_start_idx + (n + 1) as usize;
 
                 let sprites = &self.loaded_ram.mem[sprite_start_idx..sprite_end_idx]
                     .iter()
@@ -215,8 +205,8 @@ impl<'a> Emulator<'a> {
 
                 let coords = (self.loaded_ram.V[x as usize], self.loaded_ram.V[y as usize]);
 
-                let flipped_bit_callback = || {
-                    self.loaded_ram.update_vf_register(true);
+                let flipped_bit_callback = |did_flip: bool| {
+                    self.loaded_ram.update_vf_register(did_flip);
                 };
 
                 let draw_info = DrawInfo {
@@ -229,12 +219,13 @@ impl<'a> Emulator<'a> {
             }
             (0xE, _, _, _) => match n {
                 0xE => {
-                    if self.is_pressed(self.loaded_ram.V[x as usize] as i32) {
+                    println!("IN E::{}", self.loaded_ram.V[x as usize]);
+                    if self.is_pressed(self.loaded_ram.V[x as usize]) {
                         self.loaded_ram.PC += 2;
                     }
                 }
                 0x1 => {
-                    if !self.is_pressed(self.loaded_ram.V[x as usize] as i32) {
+                    if !self.is_pressed(self.loaded_ram.V[x as usize]) {
                         self.loaded_ram.PC += 2;
                     }
                 }

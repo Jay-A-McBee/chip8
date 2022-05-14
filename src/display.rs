@@ -45,7 +45,7 @@ impl Display {
     }
 
     /// Updates virtual_canvas and renders to window canvas
-    pub fn draw<F: FnMut() -> ()>(
+    pub fn draw<F: FnMut(bool) -> ()>(
         &mut self,
         DrawInfo {
             coords,
@@ -65,6 +65,7 @@ impl Display {
         let final_column = if x_coord + 8 >= 64 { 64 } else { x_coord + 8 };
 
         let rows = (y_coord..final_row).into_iter().enumerate();
+        let mut flipped = false;
 
         for (sprite_idx, row_idx) in rows {
             let mut row = self.virtual_canvas[row_idx as usize];
@@ -77,12 +78,17 @@ impl Display {
                 let is_on = (sprite_pixel >> bit_shift) & 1 == 1;
 
                 if is_on {
-                    row[column_idx as usize] = [5, 110, 5, 0];
-                } else {
-                    row[column_idx as usize] = [0, 0, 0, 0];
-                    if u32::from_be_bytes(pixel) == u32::from_be_bytes([5, 110, 5, 0]) {
-                        flipped_bits_callback();
+                    if pixel == [5, 110, 5, 0] {
+                        row[column_idx as usize] = [0, 0, 0, 0];
+                        flipped = true;
+                    } else {
+                        row[column_idx as usize] = [5, 110, 5, 0];
                     }
+                } else {
+                    if pixel == [5, 110, 5, 0] {
+                        flipped = true;
+                    }
+                    row[column_idx as usize] = [0, 0, 0, 0];
                 }
             }
 
@@ -91,7 +97,7 @@ impl Display {
 
         let bytes = self.get_raw_bytes();
         self.renderer.render(&bytes)?;
-
+        flipped_bits_callback(flipped);
         Ok(())
     }
 }
@@ -130,7 +136,7 @@ mod tests {
             row_count: 5,
             sprites: &[0xF0, 0x90, 0xF0, 0x90, 0x90], // letter "A",
         };
-        let mock_cb = || {};
+        let mock_cb = |bool_arg| {};
 
         let _ = display.draw(draw_info, mock_cb);
 
@@ -140,7 +146,7 @@ mod tests {
     #[test]
     fn clears_virtual_canvas() {
         let mut display = setup();
-        let mock_cb = || {};
+        let mock_cb = |bool_arg| {};
         let draw_info = DrawInfo {
             coords: (10, 20),
             row_count: 5,
@@ -156,7 +162,7 @@ mod tests {
     #[test]
     fn handles_x_coord_oob() {
         let mut display = setup();
-        let mock_cb = || {};
+        let mock_cb = |bool_arg| {};
         let draw_info = DrawInfo {
             coords: (60, 20),
             row_count: 5,
@@ -171,7 +177,7 @@ mod tests {
     #[test]
     fn handles_y_coord_oob() {
         let mut display = setup();
-        let mock_cb = || {};
+        let mock_cb = |bool_arg| {};
         let draw_info = DrawInfo {
             coords: (60, 30),
             row_count: 5,
