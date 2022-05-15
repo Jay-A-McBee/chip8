@@ -6,41 +6,49 @@ mod ram;
 mod render;
 mod sys_handles;
 
-use cli::answer::{self, Answer};
-use std::io;
-use std::{
-    error, fs,
-    io::{IoSlice, Write},
-    path, result,
-};
-use sys_handles::keyboard::Keyboard;
+use std::{error, fs, path, result};
 
-use crate::cli::question::{Question, QuestionFormat};
+use crate::cli::question::Question;
 use crate::emulator::Emulator;
-use crate::ram::Ram;
 
 pub type Error = Box<dyn error::Error>;
 pub type Result<T> = result::Result<T, Error>;
 
+extern crate dialoguer;
 extern crate rand;
 extern crate sdl2;
-
 fn main() -> Result<()> {
-    let program = fs::read(path::PathBuf::from("../../Downloads/Astro.ch8")).expect("couldnt find");
-    let pg_len = program.len();
-    println!("{}", pg_len);
+    // let program = fs::read(path::PathBuf::from("../../Downloads/Astro.ch8")).expect("couldnt find");
+    // let pg_len = program.len();
+    // println!("{}", pg_len);
+
+    const MENU_OPTIONS: [&str; 2] = ["Select Game", "Upload Game"];
+    const AVAILABLE_GAMES: [&str; 2] = ["Astro", "Ibm"];
 
     sdl2::hint::set("SDL_NO_SIGNAL_HANDLERS", "1");
-    let sdl_ctx = sdl2::init().unwrap();
-    let mut event_pump = sdl_ctx.event_pump().unwrap();
 
-    let mut display = display::Display::from(&sdl_ctx);
-    let mut kb = Keyboard::new();
-    let mut loaded_ram = Ram::load(program.as_slice());
+    if let Ok(Some(idx)) = Question::select(
+        &Vec::from(MENU_OPTIONS),
+        Some("Welcome to Chipwich -> Make a Selection"),
+        Some(&0),
+    ) {
+        match idx {
+            0 => {
+                if let Ok(Some(idx)) =
+                    Question::select(&Vec::from(AVAILABLE_GAMES), Some("Choose a game"), Some(&0))
+                {
+                    let selected_game = AVAILABLE_GAMES.get(idx).unwrap();
+                    let game_path = path::PathBuf::from(format!("games/{}.ch8", selected_game));
+                    let game = fs::read(&game_path).unwrap();
 
-    let mut emu = Emulator::new(&mut loaded_ram, &mut display, &mut event_pump, &mut kb);
+                    let mut emu = Emulator::new(game);
+                    emu.start();
+                }
+            }
 
-    emu.start();
+            _ => (),
+        }
+    }
 
     // let mut q1 = Question::question(
     //     "Select One",

@@ -124,14 +124,14 @@ mod tests {
 
     #[test]
     fn loads_font() {
-        let mut ram = Ram::load(&PROGRAM);
+        let ram = Ram::load(&PROGRAM);
         let end = 80 + Ram::FONT.len();
         assert_eq!(&ram.mem[80..end], Ram::FONT);
     }
 
     #[test]
     fn loads_program() {
-        let mut ram = Ram::load(&PROGRAM);
+        let ram = Ram::load(&PROGRAM);
         let end = ram.PC + PROGRAM.len();
         assert_eq!(&ram.mem[ram.PC..end], PROGRAM);
     }

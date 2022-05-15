@@ -1,65 +1,52 @@
-use std::io;
-use std::io::Write;
-
-pub enum QuestionFormat {
-    Statement,
-    Menu(Vec<&'static str>),
-}
+use console::Term;
+use dialoguer::{theme::ColorfulTheme, Input, Select};
 
 #[derive(Debug)]
-pub struct Question {
-    pub active_idx: Option<usize>,
-    content: &'static str,
-    possible_answers: Option<Vec<&'static str>>,
-    pub stdout_handle: std::io::Stdout,
-}
+pub struct Question();
 
 impl Question {
-    pub fn question(content: &'static str, question_format: Option<QuestionFormat>) -> Self {
-        let handle = io::stdout();
-        let (possible_answers, active_idx) = Question::format(question_format).unwrap();
-        Question {
-            active_idx,
-            content,
-            possible_answers,
-            stdout_handle: handle,
-        }
+    pub fn select<'a>(
+        options: &Vec<&'a str>,
+        prompt: Option<&'a str>,
+        default: Option<&'a usize>,
+    ) -> std::io::Result<Option<usize>> {
+        let default_idx = if let Some(&default_idx) = default {
+            default_idx
+        } else {
+            0
+        };
+
+        let prompt = if let Some(prompt) = prompt {
+            prompt
+        } else {
+            "Make a selection"
+        };
+
+        Select::with_theme(&ColorfulTheme::default())
+            .items(options)
+            .with_prompt(prompt)
+            .default(default_idx)
+            .interact_on_opt(&Term::stderr())
     }
 
-    fn format(
-        question_format: Option<QuestionFormat>,
-    ) -> Option<(Option<Vec<&'static str>>, Option<usize>)> {
-        if let Some(QuestionFormat::Menu(answers)) = question_format {
-            return Some((Some(answers), Some(0)));
+    pub fn input<'a>(
+        (prompt, initial_text, default): (Option<&'a str>, Option<&'a str>, Option<&'a str>),
+    ) -> Input<String> {
+        let mut input = Input::<String>::new();
+
+        if let Some(prompt) = prompt {
+            input.with_prompt(prompt);
         }
 
-        Some((None, None))
-    }
-
-    pub fn ask(&mut self) -> std::io::Result<()> {
-        self.stdout_handle.write_all(self.content.as_bytes())?;
-
-        if let Some(answers) = &self.possible_answers {
-            self.stdout_handle
-                .write_all(String::from("\n\n").as_bytes())?;
-
-            for (idx, answer) in answers.iter().enumerate() {
-                let cursor = if let Some(active_idx) = self.active_idx {
-                    if idx == active_idx {
-                        "> "
-                    } else {
-                        ""
-                    }
-                } else {
-                    ""
-                };
-
-                let formatted = format!("{}{}\n", cursor, answer);
-                self.stdout_handle.write_all(formatted.as_bytes())?;
-            }
+        if let Some(initial_text) = initial_text {
+            input.with_initial_text(initial_text);
         }
 
-        Ok(())
+        if let Some(default) = default {
+            input.default(default.to_string());
+        }
+
+        input
     }
 }
 

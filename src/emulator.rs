@@ -6,27 +6,29 @@ use crate::sys_handles::keyboard::Keyboard;
 use sdl2::{event, keyboard, EventPump};
 use std::time::{Duration, Instant};
 
-pub struct Emulator<'a> {
-    display: &'a mut Display,
+pub struct Emulator {
+    display: Display,
+    pub event_pump: EventPump,
+    keyboard: Keyboard,
     last_cycle: Option<Instant>,
-    loaded_ram: &'a mut Ram,
-    pub event_pump: &'a mut EventPump,
-    keyboard: &'a mut Keyboard,
+    loaded_ram: Ram,
 }
 
-impl<'a> Emulator<'a> {
+impl Emulator {
     const CYCLE_RATE: u128 = Duration::from_millis(1000 / 60).as_millis();
 
-    pub fn new(
-        loaded_ram: &'a mut Ram,
-        display: &'a mut Display,
-        event_pump: &'a mut EventPump,
-        keyboard: &'a mut Keyboard,
-    ) -> Self {
+    pub fn new(program: Vec<u8>) -> Self {
+        let sdl_ctx = sdl2::init().unwrap();
+        let mut event_pump = sdl_ctx.event_pump().unwrap();
+
+        let mut display = Display::from(&sdl_ctx);
+        let mut kb = Keyboard::new();
+        let mut loaded_ram = Ram::load(program.as_slice());
+
         Emulator {
             display,
             event_pump,
-            keyboard,
+            keyboard: kb,
             loaded_ram,
             last_cycle: None,
         }
