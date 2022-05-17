@@ -67,7 +67,7 @@ impl Ram {
 
     pub fn get_next_instruction(&mut self) -> [u8; 2] {
         let hi_byte = self.mem[self.PC as usize];
-        let lo_byte = self.mem[self.PC + 1 as usize];
+        let lo_byte = self.mem[self.PC + 1_usize];
 
         // Move PC to next instruction. We consume instructions
         // two bytes at a time.
@@ -118,8 +118,10 @@ impl Ram {
 }
 
 mod tests {
+    #[allow(unused_imports)]
     use super::*;
 
+    #[allow(dead_code)]
     const PROGRAM: &[u8] = &[1, 2, 3, 4];
 
     #[test]

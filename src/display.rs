@@ -39,13 +39,13 @@ impl Display {
     pub fn get_raw_bytes(&mut self) -> Vec<u8> {
         self.virtual_canvas
             .iter()
-            .flat_map(|row| row.iter().flat_map(|row| row))
+            .flat_map(|row| row.iter().flatten())
             .copied()
             .collect::<Vec<u8>>()
     }
 
     /// Updates virtual_canvas and renders to window canvas
-    pub fn draw<F: FnMut(bool) -> ()>(
+    pub fn draw<F: FnMut(bool)>(
         &mut self,
         DrawInfo {
             coords,
@@ -103,7 +103,7 @@ mod tests {
     pub struct MockCanvas {}
 
     impl Render for MockCanvas {
-        fn render(&mut self, bytes: &[u8]) -> Result<()> {
+        fn render(&mut self, _bytes: &[u8]) -> Result<()> {
             Ok(())
         }
 
@@ -112,6 +112,7 @@ mod tests {
         }
     }
 
+    #[allow(dead_code)]
     fn setup() -> Display {
         let renderer = Renderer {
             canvas: Box::new(MockCanvas {}),
@@ -131,7 +132,7 @@ mod tests {
             row_count: 5,
             sprites: &[0xF0, 0x90, 0xF0, 0x90, 0x90], // letter "A",
         };
-        let mock_cb = |bool_arg| {};
+        let mock_cb = |_bool_arg| {};
 
         let _ = display.draw(draw_info, mock_cb);
 
@@ -141,7 +142,7 @@ mod tests {
     #[test]
     fn clears_virtual_canvas() {
         let mut display = setup();
-        let mock_cb = |bool_arg| {};
+        let mock_cb = |_bool_arg| {};
         let draw_info = DrawInfo {
             coords: (10, 20),
             row_count: 5,
@@ -157,7 +158,7 @@ mod tests {
     #[test]
     fn handles_x_coord_oob() {
         let mut display = setup();
-        let mock_cb = |bool_arg| {};
+        let mock_cb = |_bool_arg| {};
         let draw_info = DrawInfo {
             coords: (60, 20),
             row_count: 5,
@@ -172,7 +173,7 @@ mod tests {
     #[test]
     fn handles_y_coord_oob() {
         let mut display = setup();
-        let mock_cb = |bool_arg| {};
+        let mock_cb = |_bool_arg| {};
         let draw_info = DrawInfo {
             coords: (60, 30),
             row_count: 5,

@@ -1,10 +1,11 @@
+use sdl2::{event, EventPump};
+
+use std::time::{Duration, Instant};
+
 use crate::display::{Display, DrawInfo};
 use crate::instruction::Instruction;
 use crate::ram::{Ram, Timer};
 use crate::sys_handles::{keyboard::Keyboard, sound::SoundSystem};
-
-use sdl2::{event, keyboard, EventPump};
-use std::time::{Duration, Instant};
 
 pub struct Emulator {
     display: Display,
@@ -40,12 +41,12 @@ impl Emulator {
     pub fn start(&mut self) {
         loop {
             for ev in self.event_pump.poll_iter() {
-                match ev {
-                    event::Event::KeyDown {
-                        scancode: Some(code),
-                        ..
-                    } => self.keyboard.press_key(code),
-                    _ => {}
+                if let event::Event::KeyDown {
+                    scancode: Some(code),
+                    ..
+                } = ev
+                {
+                    self.keyboard.press_key(code)
                 }
             }
 
@@ -106,13 +107,12 @@ impl Emulator {
         // println!("instructions::{}", format!("{}", parsed_instruction));
         match (first_nibble, x, y, n) {
             (0x0, 0x0, 0xE, 0x0) => {
-                self.display.clear();
+                let _ = self.display.clear();
             }
             (0x0, 0x0, 0xE, 0xE) => {
-                self.loaded_ram.remove_addr().and_then(|return_addr| {
+                if let Some(return_addr) = self.loaded_ram.remove_addr() {
                     self.loaded_ram.PC = return_addr as usize;
-                    Some(())
-                });
+                }
             }
             (0x1, _, _, _) => {
                 self.loaded_ram.PC = nnn as usize;
@@ -164,7 +164,7 @@ impl Emulator {
                     // value that will be shifted out - first big end bit
                     let is_one = self.loaded_ram.V[x as usize] & 1 == 1;
                     self.loaded_ram.update_vf_register(is_one);
-                    self.loaded_ram.V[x as usize] = self.loaded_ram.V[x as usize] >> 1;
+                    self.loaded_ram.V[x as usize] >>= 1;
                 }
                 7 => {
                     self.loaded_ram.update_vf_register(
@@ -178,7 +178,7 @@ impl Emulator {
                     let is_one = self.loaded_ram.V[x as usize] >> 7 == 1;
                     // value that will be shifted out - final big end bit
                     self.loaded_ram.update_vf_register(is_one);
-                    self.loaded_ram.V[x as usize] = self.loaded_ram.V[x as usize] << 1;
+                    self.loaded_ram.V[x as usize] <<= 1;
                 }
                 _ => println!("MISS::{}", n),
             },
@@ -200,11 +200,7 @@ impl Emulator {
                 let sprite_start_idx = self.loaded_ram.I as usize;
                 let sprite_end_idx = sprite_start_idx + (n + 1) as usize;
 
-                let sprites = &self.loaded_ram.mem[sprite_start_idx..sprite_end_idx]
-                    .iter()
-                    .copied()
-                    .collect::<Vec<u8>>();
-
+                let sprites = &self.loaded_ram.mem[sprite_start_idx..sprite_end_idx].to_vec();
                 let coords = (self.loaded_ram.V[x as usize], self.loaded_ram.V[y as usize]);
 
                 let flipped_bit_callback = |did_flip: bool| {
@@ -285,10 +281,9 @@ impl Emulator {
                         ..
                     } = self.event_pump.wait_event()
                     {
-                        self.keyboard.scancode_to_hex.get(&code).and_then(|val| {
-                            self.loaded_ram.V[x as usize] = *val;
-                            Some(())
-                        });
+                        if let Some(&val) = self.keyboard.scancode_to_hex.get(&code) {
+                            self.loaded_ram.V[x as usize] = val;
+                        };
                     }
                 }
                 0xE => {

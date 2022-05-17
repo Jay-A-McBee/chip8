@@ -31,14 +31,14 @@ impl Keyboard {
     pub fn new() -> Self {
         let scancode_to_hex: [(Scancode, u8); 16] = HEX_TO_SCANCODE
             .iter()
-            .map(|(hex, scan)| (scan.clone(), hex.clone()))
+            .map(|(hex, scan)| (*scan, *hex))
             .collect::<Vec<(Scancode, u8)>>()
             .try_into()
             .unwrap();
 
         let pressed_keys: [(u8, bool); 16] = HEX_TO_SCANCODE
             .iter()
-            .map(|(val, _)| (val.clone(), false))
+            .map(|(val, _)| (*val, false))
             .collect::<Vec<(u8, bool)>>()
             .try_into()
             .unwrap();
@@ -54,11 +54,10 @@ impl Keyboard {
     pub fn press_key(&mut self, scancode: Scancode) {
         self.release_key(self.last_pressed);
 
-        self.scancode_to_hex.get(&scancode).and_then(|&code| {
+        if let Some(&code) = self.scancode_to_hex.get(&scancode) {
             self.pressed_keys.insert(code, true);
             self.last_pressed = Some(code);
-            Some(())
-        });
+        };
     }
 
     pub fn release_key(&mut self, hex_code: Option<u8>) {

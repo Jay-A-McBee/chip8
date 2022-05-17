@@ -1,10 +1,7 @@
 use crate::reqwest;
 use console::Term;
 use dialoguer::{theme::ColorfulTheme, Input, Select};
-use std::{fs, io, path};
-
-use crate::Result;
-
+use std::{fs, io};
 #[derive(Debug)]
 pub struct LocalGame {
     pub path: String,
@@ -33,7 +30,7 @@ impl Playable for RemoteGame {
 
     fn boot(&self) -> Self::Res {
         let resp = reqwest::blocking::get(self.path.as_str())?;
-        resp.bytes().and_then(|bytes| Ok(bytes.to_vec()))
+        resp.bytes().map(|bytes| bytes.to_vec())
     }
 }
 
@@ -42,7 +39,7 @@ pub struct Question();
 
 impl Question {
     pub fn select(
-        options: &Vec<&str>,
+        options: &[&str],
         prompt: Option<&str>,
         default: Option<&usize>,
     ) -> std::io::Result<Option<usize>> {

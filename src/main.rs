@@ -35,11 +35,7 @@ _(____/____/___/__/______/___/__|/_|/___/____(___ __/___/_
         .unwrap()
         .filter_map(|entry| {
             if let Ok(entry) = entry {
-                if let Some(name) = entry.file_name().to_str() {
-                    Some(name.to_owned())
-                } else {
-                    None
-                }
+                entry.file_name().to_str().map(|name| name.to_owned())
             } else {
                 None
             }
@@ -68,7 +64,7 @@ _(____/____/___/__/______/___/__|/_|/___/____(___ __/___/_
             },
 
             1 => {
-                if let Ok(file_path) = Question::input((Some(&"Type in the path to the game\n This should be an absolute file path. (Ex. ~/Users/SomeUser/documents/games/blah.ch8)"), None, None)) {
+                if let Ok(file_path) = Question::input((Some("Type in the path to the game\n This should be an absolute file path. (Ex. ~/Users/SomeUser/documents/games/blah.ch8)"), None, None)) {
                     let game = LocalGame { path: file_path };
                     let program = game.boot()?;
 
@@ -78,7 +74,7 @@ _(____/____/___/__/______/___/__|/_|/___/____(___ __/___/_
             },
 
             2 => {
-                if let Ok(file_path) = Question::input((Some(&"Type in the url of the game to download."), None, None)) {
+                if let Ok(file_path) = Question::input((Some("Type in the url of the game to download."), None, None)) {
                     let game  = RemoteGame { path: file_path };
                     println!("Downloading -> {}", &game.path);
                     let program = game.boot()?;
