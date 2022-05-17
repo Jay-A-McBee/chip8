@@ -27,7 +27,7 @@ fn main() -> Result<()> {
   /         /   )  /      /   ) | /| /   /    /   '  /   )
 _(____/____/___/__/______/___/__|/_|/___/____(___ __/___/_
                         /                                 
-                       /\n A chip8 emulator written in Rust\n\n";
+                       /\n A rustaceous chip8 emulator\n\n";
 
     sdl2::hint::set("SDL_NO_SIGNAL_HANDLERS", "1");
 
