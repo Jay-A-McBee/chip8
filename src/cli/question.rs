@@ -20,8 +20,7 @@ impl Playable for LocalGame {
     type Res = io::Result<Vec<u8>>;
 
     fn boot(&self) -> Self::Res {
-        let contents = fs::read(self.path.as_str()).unwrap();
-        Ok(contents)
+        fs::read(self.path.as_str())
     }
 }
 
@@ -81,8 +80,4 @@ impl Question {
 
         input.interact()
     }
-}
-
-pub trait Read {
-    fn read(buffer: String) -> std::io::Result<String>;
 }
