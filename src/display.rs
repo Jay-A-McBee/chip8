@@ -84,11 +84,6 @@ impl Display {
                     } else {
                         row[column_idx as usize] = [5, 110, 5, 0];
                     }
-                } else {
-                    if pixel == [5, 110, 5, 0] {
-                        flipped = true;
-                    }
-                    row[column_idx as usize] = [0, 0, 0, 0];
                 }
             }
 

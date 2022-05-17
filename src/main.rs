@@ -6,9 +6,9 @@ mod ram;
 mod render;
 mod sys_handles;
 
-use std::{error, fs, path, result};
+use std::{error, fs, result};
 
-use crate::cli::question::Question;
+use crate::cli::question::{LocalGame, Playable, Question, RemoteGame};
 use crate::emulator::Emulator;
 
 pub type Error = Box<dyn error::Error>;
@@ -16,9 +16,10 @@ pub type Result<T> = result::Result<T, Error>;
 
 extern crate dialoguer;
 extern crate rand;
+extern crate reqwest;
 extern crate sdl2;
 fn main() -> Result<()> {
-    const MENU_OPTIONS: [&str; 2] = ["Select Game", "Upload Game"];
+    const MENU_OPTIONS: [&str; 3] = ["Select Game", "Load Local Game", "Download Remote Game"];
     const INTRO: &str = "__________________________________________________________
       __                                                  
     /    )    /      ,                     ,           /  
@@ -57,27 +58,37 @@ _(____/____/___/__/______/___/__|/_|/___/____(___ __/___/_
                 if let Ok(Some(idx)) =
                     Question::select(&available_games, Some("Choose a game"), Some(&0))
                 {
-                    let selected_game = available_games.get(idx).unwrap();
-                    let game_path = path::PathBuf::from(format!("games/{}", selected_game));
-                    let game = fs::read(&game_path).unwrap();
+                    let selected = available_games.get(idx).unwrap();
+                    let game = LocalGame { path: format!("games/{}", selected)};
+                    let program = game.boot()?;
 
-                    let mut emu = Emulator::new(game);
+                    let mut emu = Emulator::new(program);
                     emu.start();
                 }
-            }
+            },
 
-            _ => {
-                if let Ok(file_path) = Question::input((Some(&"Type in the path to the game\n This can accept an absolute file path or an http/https url"), None, None)) {
-                    if file_path.starts_with("http") || file_path.starts_with("https") {
-                        todo!()
-                    } else {
-                        println!("{file_path}");
-                        let game = fs::read(file_path).unwrap();
-                        let mut emu = Emulator::new(game);
-                        emu.start();
-                    }
+            1 => {
+                if let Ok(file_path) = Question::input((Some(&"Type in the path to the game\n This should be an absolute file path. (Ex. ~/Users/SomeUser/documents/games/blah.ch8)"), None, None)) {
+                    let game = LocalGame { path: file_path };
+                    let program = game.boot()?;
+
+                    let mut emu = Emulator::new(program);
+                    emu.start();
                 }
             },
+
+            2 => {
+                if let Ok(file_path) = Question::input((Some(&"Type in the url of the game to download."), None, None)) {
+                    let game  = RemoteGame { path: file_path };
+                    println!("Downloading -> {}", &game.path);
+                    let program = game.boot()?;
+
+                    let mut emu = Emulator::new(program);
+                    emu.start();
+                }
+            },
+
+            _ => ()
         }
     }
 
