@@ -52,31 +52,22 @@ impl Keyboard {
     }
 
     pub fn press_key(&mut self, scancode: Scancode) {
-        if let Some(code) = self.last_pressed {
-            self.pressed_keys.insert(code, false);
-        }
+        self.release_key(self.last_pressed);
 
         self.scancode_to_hex.get(&scancode).and_then(|&code| {
-            println!("PRESSED:{code}");
             self.pressed_keys.insert(code, true);
             self.last_pressed = Some(code);
             Some(())
         });
     }
 
-    pub fn release_key(&mut self, scancode: Scancode) {
-        println!("IN RELEASE:{scancode}");
-        self.scancode_to_hex.get(&scancode).and_then(|code| {
-            self.pressed_keys.insert(*code, false);
-            Some(())
-        });
+    pub fn release_key(&mut self, hex_code: Option<u8>) {
+        if let Some(hex) = hex_code {
+            self.pressed_keys.insert(hex, false);
+        }
     }
 
     pub fn is_pressed(&self, keycode: u8) -> bool {
-        println!(
-            "IN IS_PRESSED:{keycode}::{}",
-            *self.pressed_keys.get(&keycode).unwrap()
-        );
         *self.pressed_keys.get(&keycode).unwrap()
     }
 }

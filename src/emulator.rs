@@ -1,7 +1,7 @@
 use crate::display::{Display, DrawInfo};
 use crate::instruction::Instruction;
 use crate::ram::{Ram, Timer};
-use crate::sys_handles::keyboard::Keyboard;
+use crate::sys_handles::{keyboard::Keyboard, sound::SoundSystem};
 
 use sdl2::{event, keyboard, EventPump};
 use std::time::{Duration, Instant};
@@ -10,12 +10,13 @@ pub struct Emulator {
     display: Display,
     pub event_pump: EventPump,
     keyboard: Keyboard,
+    sound_system: SoundSystem,
     last_cycle: Option<Instant>,
     loaded_ram: Ram,
 }
 
 impl Emulator {
-    const CYCLE_RATE: u128 = Duration::from_millis(1000 / 90).as_millis();
+    const CYCLE_RATE: u128 = Duration::from_millis(1000 / 60).as_millis();
 
     pub fn new(program: Vec<u8>) -> Self {
         let sdl_ctx = sdl2::init().unwrap();
@@ -24,12 +25,14 @@ impl Emulator {
         let display = Display::from(&sdl_ctx);
         let kb = Keyboard::new();
         let loaded_ram = Ram::load(program.as_slice());
+        let sound_system = SoundSystem::new(&sdl_ctx);
 
         Emulator {
             display,
             event_pump,
             keyboard: kb,
             loaded_ram,
+            sound_system,
             last_cycle: None,
         }
     }
@@ -38,16 +41,11 @@ impl Emulator {
         loop {
             for ev in self.event_pump.poll_iter() {
                 match ev {
-                    event::Event::Quit { .. } => {
-                        // break 'running;
-                    }
                     event::Event::KeyDown {
                         scancode: Some(code),
                         ..
                     } => self.keyboard.press_key(code),
-                    _ => {
-                        println!("EVENT::{ev:?}");
-                    }
+                    _ => {}
                 }
             }
 
@@ -86,7 +84,10 @@ impl Emulator {
         }
 
         if self.loaded_ram.sound_timer > 0 {
+            self.sound_system.device.resume();
             self.loaded_ram.sound_timer -= 1;
+        } else if self.sound_system.is_playing() {
+            self.sound_system.device.pause();
         }
 
         let instruction_bytes = self.loaded_ram.get_next_instruction();
@@ -220,7 +221,6 @@ impl Emulator {
             }
             (0xE, _, _, _) => match n {
                 0xE => {
-                    println!("IN E::{}", self.loaded_ram.V[x as usize]);
                     if self.is_pressed(self.loaded_ram.V[x as usize]) {
                         self.loaded_ram.PC += 2;
                     }
@@ -262,7 +262,6 @@ impl Emulator {
                         (self.loaded_ram.I..self.loaded_ram.I + 1 + x as u16)
                             .enumerate()
                             .for_each(|(i, addr)| {
-                                println!("{}::{}", i, addr);
                                 self.loaded_ram.V[i] = self.loaded_ram.mem[addr as usize];
                             });
                     }
