@@ -1,4 +1,4 @@
-use crate::render::{Render, Renderer};
+use crate::render::{Renderable, Renderer};
 use sdl2::Sdl;
 
 use crate::Result;
@@ -102,7 +102,7 @@ mod tests {
 
     pub struct MockCanvas {}
 
-    impl Render for MockCanvas {
+    impl Renderable for MockCanvas {
         fn render(&mut self, _bytes: &[u8]) -> Result<()> {
             Ok(())
         }

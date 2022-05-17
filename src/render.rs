@@ -2,7 +2,7 @@ use sdl2::{pixels, render::WindowCanvas, Sdl};
 
 use crate::Result;
 
-pub trait Render {
+pub trait Renderable {
     fn render(&mut self, bytes: &[u8]) -> Result<()>;
     fn clear(&mut self) -> Result<()>;
 }
@@ -31,7 +31,7 @@ impl From<&Sdl> for Canvas<WindowCanvas> {
     }
 }
 
-impl Render for Canvas<WindowCanvas> {
+impl Renderable for Canvas<WindowCanvas> {
     /// creates a texture from byte array and renders onto canvas
     fn render(&mut self, bytes: &[u8]) -> Result<()> {
         let creator = self.canvas.texture_creator();
@@ -55,7 +55,7 @@ impl Render for Canvas<WindowCanvas> {
 }
 
 pub struct Renderer {
-    pub canvas: Box<dyn Render>,
+    pub canvas: Box<dyn Renderable>,
 }
 
 impl Renderer {
