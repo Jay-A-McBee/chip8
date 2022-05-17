@@ -6,6 +6,11 @@ mod ram;
 mod render;
 mod sys_handles;
 
+extern crate dialoguer;
+extern crate rand;
+extern crate reqwest;
+extern crate sdl2;
+
 use std::{error, fs, result};
 
 use crate::cli::{
@@ -17,10 +22,6 @@ use crate::emulator::Emulator;
 pub type Error = Box<dyn error::Error>;
 pub type Result<T> = result::Result<T, Error>;
 
-extern crate dialoguer;
-extern crate rand;
-extern crate reqwest;
-extern crate sdl2;
 fn main() -> Result<()> {
     const MENU_OPTIONS: [&str; 3] = ["Select Game", "Load Local Game", "Download Remote Game"];
     const INTRO: &str = "__________________________________________________________
