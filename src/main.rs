@@ -8,7 +8,10 @@ mod sys_handles;
 
 use std::{error, fs, result};
 
-use crate::cli::question::{LocalGame, Playable, Question, RemoteGame};
+use crate::cli::{
+    game::{Bootable, LocalGame, RemoteGame},
+    question::Question,
+};
 use crate::emulator::Emulator;
 
 pub type Error = Box<dyn error::Error>;
@@ -62,9 +65,8 @@ _(____/____/___/__/______/___/__|/_|/___/____(___ __/___/_
                     emu.start();
                 }
             },
-
             1 => {
-                if let Ok(file_path) = Question::input((Some("Type in the path to the game\n This should be an absolute file path. (Ex. ~/Users/SomeUser/documents/games/blah.ch8)"), None, None)) {
+                if let Ok(file_path) = Question::input((Some("Type in the path to the game\n This should be an absolute file path. (Ex. /Users/SomeUser/documents/games/blah.ch8)"), None, None)) {
                     let game = LocalGame { path: file_path };
                     let program = game.boot()?;
 
@@ -72,7 +74,6 @@ _(____/____/___/__/______/___/__|/_|/___/____(___ __/___/_
                     emu.start();
                 }
             },
-
             2 => {
                 if let Ok(file_path) = Question::input((Some("Type in the url of the game to download."), None, None)) {
                     let game  = RemoteGame { path: file_path };
