@@ -5,10 +5,10 @@ use dialoguer::{theme::ColorfulTheme, Input, Select};
 pub struct Question();
 
 impl Question {
-    pub fn select<'a>(
-        options: &Vec<&'a str>,
-        prompt: Option<&'a str>,
-        default: Option<&'a usize>,
+    pub fn select(
+        options: &Vec<&str>,
+        prompt: Option<&str>,
+        default: Option<&usize>,
     ) -> std::io::Result<Option<usize>> {
         let default_idx = if let Some(&default_idx) = default {
             default_idx
@@ -31,7 +31,7 @@ impl Question {
 
     pub fn input<'a>(
         (prompt, initial_text, default): (Option<&'a str>, Option<&'a str>, Option<&'a str>),
-    ) -> Input<String> {
+    ) -> std::io::Result<String> {
         let mut input = Input::<String>::new();
 
         if let Some(prompt) = prompt {
@@ -46,7 +46,7 @@ impl Question {
             input.default(default.to_string());
         }
 
-        input
+        input.interact()
     }
 }
 

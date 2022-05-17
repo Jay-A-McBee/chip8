@@ -15,15 +15,15 @@ pub struct Emulator {
 }
 
 impl Emulator {
-    const CYCLE_RATE: u128 = Duration::from_millis(1000 / 60).as_millis();
+    const CYCLE_RATE: u128 = Duration::from_millis(1000 / 90).as_millis();
 
     pub fn new(program: Vec<u8>) -> Self {
         let sdl_ctx = sdl2::init().unwrap();
-        let mut event_pump = sdl_ctx.event_pump().unwrap();
+        let event_pump = sdl_ctx.event_pump().unwrap();
 
-        let mut display = Display::from(&sdl_ctx);
-        let mut kb = Keyboard::new();
-        let mut loaded_ram = Ram::load(program.as_slice());
+        let display = Display::from(&sdl_ctx);
+        let kb = Keyboard::new();
+        let loaded_ram = Ram::load(program.as_slice());
 
         Emulator {
             display,
@@ -35,7 +35,7 @@ impl Emulator {
     }
 
     pub fn start(&mut self) {
-        'running: loop {
+        loop {
             for ev in self.event_pump.poll_iter() {
                 match ev {
                     event::Event::Quit { .. } => {
@@ -64,7 +64,6 @@ impl Emulator {
     }
 
     fn is_pressed(&self, key_code: u8) -> bool {
-        println!("IS PRESSED::{}", key_code);
         self.keyboard.is_pressed(key_code)
     }
 
