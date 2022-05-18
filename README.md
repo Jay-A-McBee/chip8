@@ -3,6 +3,20 @@
 #### A rustaceous chip8 emulator
 ###### Do you long for the TI graphing calculator games of your youth?
 
+### Requirements
+
+#### SDL Development Library
+
+##### macOS
+```
+brew install sdl2
+```
+##### Linux (ubuntu)
+```
+sudo apt-get install libsdl2-dev
+```
+See the [SDL2.0 development libraries](https://github.com/Rust-SDL2/rust-sdl2#sdl20-development-libraries) section of the rust-sdl2 library for more information or to troubleshoot install issues.
+
 ### Start the CLI
 
 ```
