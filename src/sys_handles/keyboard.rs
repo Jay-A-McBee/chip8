@@ -1,10 +1,10 @@
 use sdl2::keyboard::Scancode;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub struct Keyboard {
     pub hex_to_scancode: HashMap<u8, Scancode>,
     pub scancode_to_hex: HashMap<Scancode, u8>,
-    pub pressed_keys: HashMap<u8, bool>,
+    pressed_keys: HashSet<u8>,
     last_pressed: Option<u8>,
 }
 
@@ -36,17 +36,10 @@ impl Keyboard {
             .try_into()
             .unwrap();
 
-        let pressed_keys: [(u8, bool); 16] = HEX_TO_SCANCODE
-            .iter()
-            .map(|(val, _)| (*val, false))
-            .collect::<Vec<(u8, bool)>>()
-            .try_into()
-            .unwrap();
-
         Keyboard {
             hex_to_scancode: HashMap::from(HEX_TO_SCANCODE),
             scancode_to_hex: HashMap::from(scancode_to_hex),
-            pressed_keys: HashMap::from(pressed_keys),
+            pressed_keys: HashSet::new(),
             last_pressed: None,
         }
     }
@@ -55,18 +48,18 @@ impl Keyboard {
         self.release_key(self.last_pressed);
 
         if let Some(&code) = self.scancode_to_hex.get(&scancode) {
-            self.pressed_keys.insert(code, true);
+            self.pressed_keys.insert(code);
             self.last_pressed = Some(code);
         };
     }
 
     pub fn release_key(&mut self, hex_code: Option<u8>) {
         if let Some(hex) = hex_code {
-            self.pressed_keys.insert(hex, false);
+            self.pressed_keys.remove(&hex);
         }
     }
 
     pub fn is_pressed(&self, keycode: u8) -> bool {
-        *self.pressed_keys.get(&keycode).unwrap()
+        self.pressed_keys.contains(&keycode)
     }
 }

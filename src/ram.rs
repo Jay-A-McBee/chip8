@@ -5,6 +5,7 @@ pub enum Timer {
 }
 
 #[derive(Debug)]
+#[allow(non_snake_case)]
 pub struct Ram {
     pub mem: [u8; 4096],
     pub PC: usize,
@@ -35,24 +36,22 @@ impl Ram {
         0xF0, 0x80, 0xF0, 0x80, 0x80, // F
     ];
 
-    const MEMORY: [u8; 4096] = [0; 4096];
-
     pub const START_PRGM_REGISTER: usize = 0x200;
-
     /// creates Ram struct
     pub fn load(program: &[u8]) -> Self {
+        let memory = [0; 4096];
         let program_len = program.len();
 
-        let loaded = Self::MEMORY[0..80]
+        let loaded = memory[0..80]
             .iter()
             .chain(Self::FONT.iter())
-            .chain(Self::MEMORY[(80 + Self::FONT.len())..Self::START_PRGM_REGISTER].iter())
+            .chain(memory[(80 + Self::FONT.len())..Self::START_PRGM_REGISTER].iter())
             .chain(program.iter())
-            .chain(Self::MEMORY[Self::START_PRGM_REGISTER + program_len..].iter())
+            .chain(memory[Self::START_PRGM_REGISTER + program_len..].iter())
             .copied()
             .collect::<Vec<u8>>()
             .try_into()
-            .unwrap();
+            .expect("Game loading failed");
 
         Ram {
             mem: loaded,

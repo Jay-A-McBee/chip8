@@ -3,7 +3,6 @@ mod display;
 mod emulator;
 mod instruction;
 mod ram;
-mod render;
 mod sys_handles;
 
 extern crate dialoguer;

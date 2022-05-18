@@ -1,4 +1,4 @@
-use crate::render::{Renderable, Renderer};
+use crate::sys_handles::video::{Renderable, Renderer};
 use sdl2::Sdl;
 
 use crate::Result;
