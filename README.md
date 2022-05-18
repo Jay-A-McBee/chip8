@@ -17,9 +17,8 @@ Play one of the locally installed games or checkout a visual demo/test in the ga
 Enter a file path to upload a game locally from disk.
 
 ###### Download a Game
-Enter an http/s url and download a game from a remote server.
+Enter an http/s url and download a game from a remote server. For Example,
 ```
-// try chip8 snake
 https://johnearnest.github.io/chip8Archive/roms/snake.ch8
 ```
 
