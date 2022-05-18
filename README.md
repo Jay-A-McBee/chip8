@@ -26,7 +26,7 @@ The original chip8 keyboard was a 16 key hexadecimal key pad. This has been mapp
 A 0 B F     Z X C V
 ```
 
-Game play isn't the easiest to figure out. 2, S, Q, E sometimes is up, down, left, right. W starts games occasionally. I recommend downloading and starting with a classic game - (snake)[https://johnearnest.github.io/chip8Archive/roms/snake.ch8]. 
+Game play isn't the easiest to figure out. 2, S, Q, E sometimes is up, down, left, right. W starts games occasionally. I recommend downloading and starting with a classic game - [snake](https://johnearnest.github.io/chip8Archive/roms/snake.ch8). 
 
 ```
 https://johnearnest.github.io/chip8Archive/roms/snake.ch8
