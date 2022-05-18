@@ -13,7 +13,7 @@ extern crate sdl2;
 use std::{error, fs, result};
 
 use crate::cli::{
-    game::{Bootable, LocalGame, RemoteGame},
+    game::{Loadable, LocalGame, RemoteGame},
     question::Question,
 };
 use crate::emulator::Emulator;
@@ -59,25 +59,25 @@ _(____/____/___/__/______/___/__|/_|/___/____(___ __/___/_
                 {
                     let selected = available_games.get(idx).unwrap();
                     let path = format!("games/{}", selected);
-                    let program = LocalGame::boot(path.as_str())?;
+                    let program = LocalGame::load(path.as_str())?;
 
-                    let mut emu = Emulator::new(program);
+                    let mut emu = Emulator::boot(program);
                     emu.start();
                 }
             },
             1 => {
                 if let Ok(file_path) = Question::input((Some("Type in the path to the game\n This should be an absolute file path. (Ex. /Users/SomeUser/documents/games/blah.ch8)"), None, None)) {
-                    let program = LocalGame::boot(file_path.as_str())?;
-                    let mut emu = Emulator::new(program);
+                    let program = LocalGame::load(file_path.as_str())?;
+                    let mut emu = Emulator::boot(program);
                     emu.start();
                 }
             },
             2 => {
                 if let Ok(url) = Question::input((Some("Type in the url of the game to download."), None, None)) {
                     println!("Downloading -> {}", &url);
-                    
-                    let program = RemoteGame::boot(&url)?;
-                    let mut emu = Emulator::new(program);
+
+                    let program = RemoteGame::load(&url)?;
+                    let mut emu = Emulator::boot(program);
                     emu.start();
                 }
             },
