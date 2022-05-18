@@ -58,8 +58,8 @@ _(____/____/___/__/______/___/__|/_|/___/____(___ __/___/_
                     Question::select(&available_games, Some("Choose a game"), Some(&0))
                 {
                     let selected = available_games.get(idx).unwrap();
-                    let game = LocalGame { path: format!("games/{}", selected)};
-                    let program = game.boot()?;
+                    let path = format!("games/{}", selected);
+                    let program = LocalGame::boot(path.as_str())?;
 
                     let mut emu = Emulator::new(program);
                     emu.start();
@@ -67,19 +67,16 @@ _(____/____/___/__/______/___/__|/_|/___/____(___ __/___/_
             },
             1 => {
                 if let Ok(file_path) = Question::input((Some("Type in the path to the game\n This should be an absolute file path. (Ex. /Users/SomeUser/documents/games/blah.ch8)"), None, None)) {
-                    let game = LocalGame { path: file_path };
-                    let program = game.boot()?;
-
+                    let program = LocalGame::boot(file_path.as_str())?;
                     let mut emu = Emulator::new(program);
                     emu.start();
                 }
             },
             2 => {
-                if let Ok(file_path) = Question::input((Some("Type in the url of the game to download."), None, None)) {
-                    let game  = RemoteGame { path: file_path };
-                    println!("Downloading -> {}", &game.path);
-                    let program = game.boot()?;
-
+                if let Ok(url) = Question::input((Some("Type in the url of the game to download."), None, None)) {
+                    println!("Downloading -> {}", &url);
+                    
+                    let program = RemoteGame::boot(&url)?;
                     let mut emu = Emulator::new(program);
                     emu.start();
                 }

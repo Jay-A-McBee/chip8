@@ -15,7 +15,7 @@ impl From<&Sdl> for Canvas<WindowCanvas> {
     fn from(sdl_ctx: &Sdl) -> Self {
         let video_subsystem = sdl_ctx.video().unwrap();
         let window = video_subsystem
-            .window("Chip8", 64 * 20, 32 * 20)
+            .window("Chip8", 64 * 10, 32 * 10)
             .position_centered()
             .build()
             .unwrap();
