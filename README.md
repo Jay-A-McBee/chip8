@@ -3,6 +3,12 @@
 #### A rustaceous chip8 emulator
 ###### Do you long for the TI graphing calculator games of your youth?
 
+### Start the CLI
+
+```
+cargo run
+```
+
 ### CLI Options
 ###### Select a Game
 Play one of the locally installed games or checkout a visual demo/test in the games directory.
