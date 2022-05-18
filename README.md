@@ -26,8 +26,11 @@ The original chip8 keyboard was a 16 key hexadecimal key pad. This has been mapp
 A 0 B F     Z X C V
 ```
 
-Games typically will use 2(up), Q(left), E(right), S(down) to move the sprite. W will often start the game and occasionally S will perform some type of action.
+Game play isn't the easiest to figure out. 2, S, Q, E sometimes is up, down, left, right. W starts games occasionally. I recommend downloading and starting with a classic game - (snake)[https://johnearnest.github.io/chip8Archive/roms/snake.ch8]. 
 
+```
+https://johnearnest.github.io/chip8Archive/roms/snake.ch8
+```
 ### Why is the code so verbose?
 This was mostly an exercise in Rust completed by a person learning Rust. I wanted to leverage lang features (traits, trait objects, etc.) in a somewhat less contrived manner than the examples/exercises in "the book". If you notice something particularly terrible about the code, please let me know.
 
