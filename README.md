@@ -1,6 +1,9 @@
 # Chipwich
 
 #### A rustaceous chip8 emulator
+
+![Astrododge text intro]("/assets/chip8.gif")
+
 ###### Do you long for the TI graphing calculator games of your youth?
 
 ### Requirements
