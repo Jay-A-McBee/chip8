@@ -38,7 +38,7 @@ impl Renderable for Canvas<WindowCanvas> {
         // create a texture that matches our virtual display dimensions
         let mut texture =
             creator.create_texture_streaming(creator.default_pixel_format(), 64, 32)?;
-        // pitch - bytes per row - 4 bytes per pixel
+        // pitch - bytes per row - 4 bytes per pixel [r, g, b, 0] (final 0 is padding)
         texture.update(None, bytes, 64 * 4)?;
 
         self.canvas.copy(&texture, None, None)?;

@@ -16,7 +16,7 @@ use crate::cli::{
     game::{Loadable, LocalGame, RemoteGame},
     question::Question,
 };
-use crate::emulator::Emulator;
+use crate::emulator::{Emulator, GameMode};
 
 pub type Error = Box<dyn error::Error>;
 pub type Result<T> = result::Result<T, Error>;
@@ -34,8 +34,7 @@ _(____/____/___/__/______/___/__|/_|/___/____(___ __/___/_
 
     sdl2::hint::set("SDL_NO_SIGNAL_HANDLERS", "1");
 
-    let games = fs::read_dir("games")
-        .unwrap()
+    let games = fs::read_dir("games")?
         .filter_map(|entry| {
             if let Ok(entry) = entry {
                 entry.file_name().to_str().map(|name| name.to_owned())
@@ -45,30 +44,28 @@ _(____/____/___/__/______/___/__|/_|/___/____(___ __/___/_
         })
         .collect::<Vec<String>>();
 
-    let available_games = games.iter().map(|val| val.as_str()).collect::<Vec<&str>>();
+    let available_games: Vec<&str> = games.iter().map(|val| val.as_str()).collect::<Vec<&str>>();
 
     println!("{INTRO}");
 
-    if let Ok(Some(idx)) =
-        Question::select(&Vec::from(MENU_OPTIONS), Some("Make a Selection"), Some(&0))
-    {
+    if let Ok(Some(idx)) = Question::select(&MENU_OPTIONS, Some("Make a Selection"), Some(&0)) {
         match idx {
             0 => {
                 if let Ok(Some(idx)) =
                     Question::select(&available_games, Some("Choose a game"), Some(&0))
                 {
-                    let selected = available_games.get(idx).unwrap();
+                    let selected = *available_games.get(idx).unwrap();
                     let path = format!("games/{}", selected);
                     let program = LocalGame::load(path.as_str())?;
 
-                    let mut emu = Emulator::boot(program);
+                    let mut emu = Emulator::boot(program, GameMode::Standard);
                     emu.start();
                 }
             },
             1 => {
                 if let Ok(file_path) = Question::input((Some("Type in the path to the game\n This should be an absolute file path. (Ex. /Users/SomeUser/documents/games/blah.ch8)"), None, None)) {
                     let program = LocalGame::load(file_path.as_str())?;
-                    let mut emu = Emulator::boot(program);
+                    let mut emu = Emulator::boot(program, GameMode::Standard);
                     emu.start();
                 }
             },
@@ -77,7 +74,7 @@ _(____/____/___/__/______/___/__|/_|/___/____(___ __/___/_
                     println!("Downloading -> {}", &url);
 
                     let program = RemoteGame::load(&url)?;
-                    let mut emu = Emulator::boot(program);
+                    let mut emu = Emulator::boot(program, GameMode::Standard);
                     emu.start();
                 }
             },

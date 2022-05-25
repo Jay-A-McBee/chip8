@@ -1,4 +1,4 @@
-use sdl2::{event, EventPump};
+use sdl2::{event, keyboard::Scancode, EventPump};
 
 use std::time::{Duration, Instant};
 
@@ -7,6 +7,12 @@ use crate::instruction::Instruction;
 use crate::ram::{Ram, Timer};
 use crate::sys_handles::{keyboard::Keyboard, sound::SoundSystem};
 
+#[derive(PartialEq)]
+pub enum GameMode {
+    Debug,
+    Standard,
+}
+
 pub struct Emulator {
     display: Display,
     pub event_pump: EventPump,
@@ -14,12 +20,13 @@ pub struct Emulator {
     sound_system: SoundSystem,
     last_cycle: Option<Instant>,
     loaded_ram: Ram,
+    game_mode: GameMode,
 }
 
 impl Emulator {
     const CYCLE_RATE: u128 = Duration::from_millis(5).as_millis();
 
-    pub fn boot(program: Vec<u8>) -> Self {
+    pub fn boot(program: Vec<u8>, game_mode: GameMode) -> Self {
         let sdl_ctx = sdl2::init().unwrap();
         let event_pump = sdl_ctx.event_pump().unwrap();
 
@@ -35,22 +42,66 @@ impl Emulator {
             loaded_ram,
             sound_system,
             last_cycle: None,
+            game_mode,
         }
     }
 
     pub fn start(&mut self) {
+        match self.game_mode {
+            GameMode::Debug => self.step(),
+            GameMode::Standard => self.start_loop(),
+        }
+    }
+
+    fn start_loop(&mut self) {
         loop {
+            if self.game_mode == GameMode::Debug {
+                break;
+            }
+
             for ev in self.event_pump.poll_iter() {
                 if let event::Event::KeyDown {
                     scancode: Some(code),
                     ..
                 } = ev
                 {
-                    self.keyboard.press_key(code)
+                    match code {
+                        Scancode::Space => self.game_mode = GameMode::Debug,
+                        Scancode::Return => self.game_mode = GameMode::Standard,
+                        _ => self.keyboard.press_key(code),
+                    }
                 }
             }
 
             self.cycle();
+        }
+
+        self.step();
+    }
+
+    fn step(&mut self) {
+        self.process_instruction(GameMode::Debug);
+
+        loop {
+            if let event::Event::KeyDown {
+                scancode: Some(code),
+                ..
+            } = self.event_pump.wait_event()
+            {
+                match code {
+                    Scancode::Space => self.step(),
+                    Scancode::Return => {
+                        if self.game_mode == GameMode::Debug {
+                            self.game_mode = GameMode::Standard;
+                            self.start_loop();
+                        }
+                    }
+                    _ => {
+                        println!("Hit space to execute the next instruction");
+                        println!("Hit return/enter to start the game loop again");
+                    }
+                }
+            }
         }
     }
 
@@ -75,11 +126,11 @@ impl Emulator {
 
         if time_elapsed >= Self::CYCLE_RATE {
             self.last_cycle = Some(Instant::now());
-            self.process_instruction();
+            self.process_instruction(GameMode::Standard);
         }
     }
 
-    pub fn process_instruction(&mut self) {
+    pub fn process_instruction(&mut self, game_mode: GameMode) {
         if self.loaded_ram.delay_timer > 0 {
             self.loaded_ram.delay_timer -= 1;
         }
@@ -104,6 +155,10 @@ impl Emulator {
             nnn,
             ..
         } = parsed_instruction;
+
+        if game_mode == GameMode::Debug {
+            println!("Current Instruction: {}", format!("{}", parsed_instruction));
+        }
 
         match (first_nibble, x, y, n) {
             (0x0, 0x0, 0xE, 0x0) => {
