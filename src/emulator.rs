@@ -76,7 +76,7 @@ impl Emulator {
             self.cycle();
         }
 
-        self.step();
+        self.start();
     }
 
     fn step(&mut self) {
@@ -89,12 +89,10 @@ impl Emulator {
             } = self.event_pump.wait_event()
             {
                 match code {
-                    Scancode::Space => self.step(),
+                    Scancode::Space => break,
                     Scancode::Return => {
-                        if self.game_mode == GameMode::Debug {
-                            self.game_mode = GameMode::Standard;
-                            self.start_loop();
-                        }
+                        self.game_mode = GameMode::Standard;
+                        break;
                     }
                     _ => {
                         println!("Hit space to execute the next instruction");
@@ -103,6 +101,8 @@ impl Emulator {
                 }
             }
         }
+
+        self.start();
     }
 
     fn get_nums(value: &u8) -> (u8, u8, u8) {
