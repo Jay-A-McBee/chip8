@@ -23,6 +23,7 @@ pub type Result<T> = result::Result<T, Error>;
 
 fn main() -> Result<()> {
     const MENU_OPTIONS: [&str; 3] = ["Select Game", "Load Local Game", "Download Remote Game"];
+    const GAME_MODE_OPTIONS: [&str; 2] = ["Standard", "Debug"];
     const INTRO: &str = "__________________________________________________________
       __                                                  
     /    )    /      ,                     ,           /  
@@ -54,19 +55,18 @@ _(____/____/___/__/______/___/__|/_|/___/____(___ __/___/_
                 if let Ok(Some(idx)) =
                     Question::select(&available_games, Some("Choose a game"), Some(&0))
                 {
-                    let selected = *available_games.get(idx).unwrap();
+                    let selected = available_games.get(idx).unwrap();
                     let path = format!("games/{}", selected);
                     let program = LocalGame::load(path.as_str())?;
-
-                    let mut emu = Emulator::boot(program, GameMode::Standard);
-                    emu.start();
+                    let game_mode = get_game_mode();
+                    start_emulator(program, game_mode);
                 }
             },
             1 => {
                 if let Ok(file_path) = Question::input((Some("Type in the path to the game\n This should be an absolute file path. (Ex. /Users/SomeUser/documents/games/blah.ch8)"), None, None)) {
                     let program = LocalGame::load(file_path.as_str())?;
-                    let mut emu = Emulator::boot(program, GameMode::Standard);
-                    emu.start();
+                    let game_mode = get_game_mode();
+                    start_emulator(program, game_mode);
                 }
             },
             2 => {
@@ -74,12 +74,40 @@ _(____/____/___/__/______/___/__|/_|/___/____(___ __/___/_
                     println!("Downloading -> {}", &url);
 
                     let program = RemoteGame::load(&url)?;
-                    let mut emu = Emulator::boot(program, GameMode::Standard);
-                    emu.start();
+                    let game_mode = get_game_mode();
+                    start_emulator(program, game_mode);
                 }
             },
 
             _ => ()
+        }
+    }
+
+    fn start_emulator(program: Vec<u8>, game_mode: GameMode) {
+        if game_mode == GameMode::Debug {
+            println!(
+                "The game is running in debug mode. Hit enter at anytime\n to enter standard mode."
+            );
+        } else {
+            println!(
+                "The game is running in standard mode. Hit space at anytime\n to enter debug mode."
+            );
+        }
+
+        let mut emu = Emulator::boot(program, game_mode);
+        emu.start();
+    }
+
+    fn get_game_mode() -> GameMode {
+        if let Ok(Some(idx)) =
+            Question::select(&GAME_MODE_OPTIONS, Some("Select a game mode"), Some(&0))
+        {
+            match idx {
+                1 => GameMode::Debug,
+                _ => GameMode::Standard,
+            }
+        } else {
+            GameMode::Standard
         }
     }
 

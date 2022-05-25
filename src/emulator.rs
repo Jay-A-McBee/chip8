@@ -48,7 +48,7 @@ impl Emulator {
 
     pub fn start(&mut self) {
         match self.game_mode {
-            GameMode::Debug => self.step(),
+            GameMode::Debug => self.start_debug(),
             GameMode::Standard => self.start_loop(),
         }
     }
@@ -79,7 +79,7 @@ impl Emulator {
         self.start();
     }
 
-    fn step(&mut self) {
+    fn start_debug(&mut self) {
         self.process_instruction(GameMode::Debug);
 
         loop {
