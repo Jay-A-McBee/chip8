@@ -19,6 +19,7 @@ impl From<[u8; 2]> for Instruction {
         let y = lo_byte >> 4 & BIT_MASK;
         let n = lo_byte & BIT_MASK;
         let nn = lo_byte;
+        // actually a 12 bit int
         let nnn = u16::from_be_bytes([x, lo_byte]);
 
         Instruction {

@@ -97,6 +97,7 @@ impl Display {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 
