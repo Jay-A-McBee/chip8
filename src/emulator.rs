@@ -255,9 +255,9 @@ impl Emulator {
             }
             (0xD, _, _, _) => {
                 let sprite_start_idx = self.loaded_ram.I as usize;
-                let sprite_end_idx = sprite_start_idx + (n + 1) as usize;
+                let sprite_end_idx = sprite_start_idx + n as usize;
 
-                let sprites = &self.loaded_ram.mem[sprite_start_idx..sprite_end_idx].to_vec();
+                let sprites = &self.loaded_ram.mem[sprite_start_idx..=sprite_end_idx].to_vec();
                 let coords = (self.loaded_ram.V[x as usize], self.loaded_ram.V[y as usize]);
 
                 let flipped_bit_callback = |did_flip: bool| {
@@ -304,7 +304,7 @@ impl Emulator {
                         .set_timer_register(Timer::Delay, self.loaded_ram.V[x as usize]),
                     5 => {
                         let current_index = self.loaded_ram.I as usize;
-                        self.loaded_ram.V[0..(x + 1) as usize]
+                        self.loaded_ram.V[0..=x as usize]
                             .iter()
                             .enumerate()
                             .for_each(|(i, val)| {
@@ -312,7 +312,7 @@ impl Emulator {
                             });
                     }
                     6 => {
-                        (self.loaded_ram.I..self.loaded_ram.I + 1 + x as u16)
+                        (self.loaded_ram.I..=self.loaded_ram.I + x as u16)
                             .enumerate()
                             .for_each(|(i, addr)| {
                                 self.loaded_ram.V[i] = self.loaded_ram.mem[addr as usize];
