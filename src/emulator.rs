@@ -95,8 +95,9 @@ impl Emulator {
                         break;
                     }
                     _ => {
-                        println!("Hit space to execute the next instruction");
-                        println!("Hit return/enter to start the game loop again");
+                        self.keyboard.press_key(code);
+                        // println!("Hit space to execute the next instruction");
+                        // println!("Hit return/enter to start the game loop again");
                     }
                 }
             }
@@ -157,7 +158,8 @@ impl Emulator {
         } = parsed_instruction;
 
         if game_mode == GameMode::Debug {
-            println!("Current Instruction: {}", format!("{}", parsed_instruction));
+            println!("{}", format!("{}", parsed_instruction));
+            println!("{}", format!("{}", self.loaded_ram));
         }
 
         match (first_nibble, x, y, n) {

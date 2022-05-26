@@ -36,6 +36,19 @@ Enter an http/s url and download a game from a remote server. For Example,
 https://johnearnest.github.io/chip8Archive/roms/snake.ch8
 ```
 
+##### Select a Game Mode
+- standard - normal game play/speed
+> Hit the space bar at anytime to enter debug mode. Hit 'return' to re-enter
+> standard mode.
+
+- debug - run the game manually a single cycle at a time
+> Debug mode allows you to step through the game a single instruction at a time
+> by hitting the space bar. This also produces a verbose output. The current 
+> parsed instruction as well as the current PC, I, and all V register state will
+> be visible in your terminal.
+
+> Hit 'return' to exit debug mode and enter standard mode at anytime.
+
 ### How do I play?
 
 The original chip8 keyboard was a 16 key hexadecimal key pad. This has been mapped to the following modern keyboard layout.

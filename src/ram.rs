@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Debug)]
 pub enum Timer {
     Delay,
@@ -14,6 +16,20 @@ pub struct Ram {
     pub stack: Vec<usize>,
     pub delay_timer: u8,
     pub sound_timer: u8,
+}
+
+impl fmt::Display for Ram {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        println!("----------------------");
+        println!("      Game State      ");
+        println!("----------------------");
+        writeln!(f, "PC -> {}", self.PC)?;
+        writeln!(f, "V -> {:#?}", self.V)?;
+        writeln!(f, "I -> {}", self.I)?;
+        writeln!(f, "Stack -> {:#?}", self.stack)?;
+
+        Ok(())
+    }
 }
 
 impl Ram {

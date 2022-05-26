@@ -35,6 +35,9 @@ impl From<[u8; 2]> for Instruction {
 
 impl fmt::Display for Instruction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        println!("----------------------");
+        println!("     Instruction      ");
+        println!("----------------------");
         writeln!(f, "Instruction Bytes: {:?}", self.instruction_bytes)?;
         writeln!(f, "OP: {:x}", self.first_nibble)?;
         writeln!(f, "X: {:x}", self.x)?;
