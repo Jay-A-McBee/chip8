@@ -20,12 +20,24 @@ pub struct Ram {
 
 impl fmt::Display for Ram {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        println!("----------------------");
-        println!("      Game State      ");
-        println!("----------------------");
+        writeln!(f, "----------------------")?;
+        writeln!(f, "    Program Counter   ")?;
+        writeln!(f, "----------------------")?;
         writeln!(f, "PC -> {}", self.PC)?;
-        writeln!(f, "V -> {:#?}", self.V)?;
+
+        writeln!(f, "----------------------")?;
+        writeln!(f, "      V registers     ")?;
+        writeln!(f, "----------------------")?;
+        for (idx, val) in self.V.iter().enumerate() {
+            writeln!(f, "V[{}] => {}", idx, val)?;
+        }
+        writeln!(f, "----------------------")?;
+        writeln!(f, "     Index Register   ")?;
+        writeln!(f, "----------------------")?;
         writeln!(f, "I -> {}", self.I)?;
+        writeln!(f, "----------------------")?;
+        writeln!(f, "         Stack        ")?;
+        writeln!(f, "----------------------")?;
         writeln!(f, "Stack -> {:#?}", self.stack)?;
 
         Ok(())

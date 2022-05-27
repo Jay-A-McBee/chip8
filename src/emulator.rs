@@ -14,13 +14,13 @@ pub enum GameMode {
 }
 
 pub struct Emulator {
-    display: Display,
     pub event_pump: EventPump,
+    display: Display,
     keyboard: Keyboard,
     sound_system: SoundSystem,
-    last_cycle: Option<Instant>,
     loaded_ram: Ram,
     game_mode: GameMode,
+    last_cycle: Option<Instant>,
 }
 
 impl Emulator {
@@ -89,10 +89,9 @@ impl Emulator {
             } = self.event_pump.wait_event()
             {
                 match code {
-                    Scancode::Space => break,
+                    Scancode::Space => (),
                     Scancode::Return => {
                         self.game_mode = GameMode::Standard;
-                        break;
                     }
                     _ => {
                         self.keyboard.press_key(code);
@@ -100,10 +99,12 @@ impl Emulator {
                         // println!("Hit return/enter to start the game loop again");
                     }
                 }
+
+                break;
             }
         }
-
         self.start();
+
     }
 
     fn get_nums(value: &u8) -> (u8, u8, u8) {
@@ -158,8 +159,8 @@ impl Emulator {
         } = parsed_instruction;
 
         if game_mode == GameMode::Debug {
-            println!("{}", format!("{}", parsed_instruction));
-            println!("{}", format!("{}", self.loaded_ram));
+            println!("{}", parsed_instruction);
+            println!("{}", self.loaded_ram);
         }
 
         match (first_nibble, x, y, n) {

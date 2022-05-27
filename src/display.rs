@@ -1,4 +1,4 @@
-use crate::sys_handles::video::{Renderable, Renderer};
+use crate::sys_handles::video::Renderer;
 use sdl2::Sdl;
 
 use crate::Result;
@@ -100,6 +100,7 @@ impl Display {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::sys_handles::video::Renderable;
 
     pub struct MockCanvas {}
 
